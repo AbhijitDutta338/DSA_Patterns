@@ -1,35 +1,46 @@
-#Topological Sort using DFS
+'''
+You are given an array prerequisites where prerequisites[i] = [a, b] indicates that you must take course b first if you want to take course a.
+For example, the pair [0, 1], indicates that to take course 0 you have to first take course 1.
+There are a total of numCourses courses you are required to take, labeled from 0 to numCourses - 1.
+Return a valid ordering of courses you can take to finish all courses. If there are many valid answers, return any of them. If it's not possible to finish all courses, return an empty array.
+'''
+
+from collections import deque
+
 class Solution:
     def findOrder(self, numCourses: int, prerequisites: List[List[int]]) -> List[int]:
-        graph = [[] for _ in range(numCourses)]
-        for course, prereq in prerequisites:
-            graph[prereq].append(course)
+        
+        graph = {u: [] for u in range(numCourses)}
 
-        state = [0] * numCourses
-        order = []
-        self.hasCycle = False
+        #Create the Adjacency List
+        for course, prerequisite in prerequisites:
+            graph[prerequisite].append(course)
+        
+        #Khan's Algo - Topological sort with BFS
+        in_degree = {u: 0 for u in range(numCourses)}
 
-        for i in range(numCourses):
-            if state[i] == 0:
-                self.dfs(i, graph, state, order)
-                if self.hasCycle:
-                    return []
+        #calculate indegree
+        for u in range(numCourses):
+            for v in graph[u]:
+                in_degree[v] = in_degree.get(v, 0) + 1
 
-        order.reverse()
-        return order
+        #Enqueue nodes with 0 indegree 
+        queue = deque([u for u in in_degree if in_degree[u] == 0])
+        topo_order = []
 
-    def dfs(self, node: int, graph: list[list[int]], state: list[int], order: list[int]) -> None:
-        if self.hasCycle:
-            return
+        #Do BFS
+        while queue:
+            u = queue.popleft()
+            topo_order.append(u) # add indegree 0 node to the path 
 
-        state[node] = 1  # visiting
+            for v in graph.get(u, []):
+                #reduce indegree of neighbors
+                in_degree[v] -= 1
+                #Enqueue neighbors with 0 indegree
+                if in_degree[v] == 0:
+                    queue.append(v)
 
-        for neighbor in graph[node]:
-            if state[neighbor] == 0:
-                self.dfs(neighbor, graph, state, order)
-            elif state[neighbor] == 1:
-                self.hasCycle = True
-                return
-
-        state[node] = 2  # visited
-        order.append(node)
+        if len(topo_order) == len(in_degree):
+            return topo_order
+        else:
+            return []
